@@ -1,0 +1,144 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform: AWS::Serverless-2016-10-31
+
+# Shared configuration for all resources, more in
+# https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Runtime: nodejs12.x
+    Tracing: Active
+    MemorySize: 128
+    Layers:
+      - Ref: NodeModuleLayer
+    Timeout: 6
+    Environment:
+      Variables:
+        STAGE: prod
+        REGION: "eu-west-1"
+    # The PermissionsBoundary allows users to safely develop with their function's permissions constrained
+    # to their current application. All the functions and roles in this application have to include it and
+    # it has to be manually updated when you add resources to your application.
+    # More information in https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
+    PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${AppId}-${AWS::Region}-PermissionsBoundary'
+
+Parameters:
+  AppId:
+    Type: String
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # This is a Lambda function to send email
+  # TODO : replace environment variable
+  # TODO : create a deadqueue letter
+  sendEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.sendEmailHandler
+      CodeUri: ./dist/
+      Description: Function able to send an email with XXX as emitter
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - SESCrudPolicy:
+            IdentityName: "XXX@themaco.fr"
+      Environment:
+        Variables:
+          REPLY_TO_EMAIL: "XXX@themaco.fr"
+          SOURCE_EMAIL: "XXX@themaco.fr"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /send-email
+            Method: POST
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  reportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.reportHandler
+      CodeUri: ./dist/
+      Description: Function able to send a notification to a specified topic
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - SNSPublishMessagePolicy:
+            TopicName: "*"
+      Environment:
+        Variables:
+          CONTACT_TOPIC: "arn:aws:sns:XXX:XXX:contact"
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /report
+            Method: POST
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  testFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      InlineCode: |
+        exports.handler = async function(event) {
+          console.log("Everything is ...?");
+          return {
+            statusCode: 200,
+            headers: {},
+            body: JSON.stringify("Everything is awesome!"),
+            isBase64Encoded: false
+          };
+        }
+      Description: Function used to test API directly
+      Policies:
+        - AWSXrayWriteOnlyAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+            RestApiId:
+              Ref: ApiGatewayApi
+
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST, GET, OPTIONS, DELETE'"
+        AllowHeaders: "'Accept, Content-Type, Referer, User-Agent'"
+        AllowOrigin: "'*'"
+# ADD GatewayResponses https://github.com/awslabs/serverless-application-model/pull/841/files
+      Domain:
+        BasePath: /
+        CertificateArn: 'arn:aws:acm:XXX:XXX:certificate/XXX'
+        DomainName: XXX
+        SecurityPolicy: TLS_1_2
+        EndpointConfiguration: REGIONAL
+        Route53:
+          HostedZoneId: XXX
+        
+
+  NodeModuleLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./layers/.
+      CompatibleRuntimes:
+        - nodejs12.x
+      Description: "Layer dedicated to host node_module of backend application"
+        
