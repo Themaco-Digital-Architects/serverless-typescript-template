@@ -43,7 +43,7 @@ Following the template file :
 
 ./src/ structure : 
 The idea here was to get close of an angular.io structure (for example). 
-- Each lambda function has its owns folder (./src/*/), with the src code (`*.ts`), the test code (`*.spec.ts`) and an event example (`*.event.json`). 
+- Each lambda function has its owns folder (`./src/*/`), with the src code (`*.ts`), the test code (`*.spec.ts`) and an event example (`*.event.json`). 
 - Route files are common for all functions. 
 - - Handlers contains invocation function but also the error handler / catcher. 
 - - api-interface.ts is file shared with the front (should be in a share library) to have TS type on interface request.
