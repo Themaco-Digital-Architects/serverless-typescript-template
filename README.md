@@ -3,7 +3,7 @@ This project uses mainly AWS ressources. For git repository and code build, it i
 We aim to use as few dependencies as possible.
 Scripts are not tested on Windows OS yet.
 
-## Startup
+## Quick start
 1. Fork from [github project](https://github.com/Themaco-Digital-Architects/serverless-typescript-template)
 2. Create an AWS account and add you account credentials `aws configure`
 3. In code, search for XXX and replace value with your own.
@@ -29,7 +29,7 @@ We believe that maintaining a 100% coverage is a good practice to ensure code re
 
 ### SAM tests - run locally
 SAM, based on a Docker, offers the possibility to locally tests function. You need to follow [AWS CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-test-and-debug.html) set up instruction. On visual studio code, for example, a AWS toolkit also necessary (amazonwebservices.aws-toolkit-vscode). 
-It is mandatory to use `npm run sam`.
+It is mandatory to use `npm run sam`. As it runs the compilation, it could be a quick debug for modification on SAM template.
 You should be able to use breakpoint on your code. NOT IMPLEMENTED YET
 
 ### AWS console tests
@@ -47,5 +47,3 @@ The idea here was to get close of an angular.io structure (for example).
 - Route files are common for all functions. 
 - - Handlers contains invocation function but also the error handler / catcher. 
 - - api-interface.ts is file shared with the front (should be in a share library) to have TS type on interface request.
-
-## Scripts explanations
