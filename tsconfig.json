@@ -1,0 +1,31 @@
+{
+  "compileOnSave": true,
+  "include": [
+    "./src",
+  ],
+  "exclude": [
+    "node_modules",
+    "./src/**/*.spec.ts"
+  ],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": false,
+    "declaration": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "importHelpers": true,
+    "target": "es2018",
+    "esModuleInterop": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "lib": [
+      "es2018"
+    ],
+  },
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+.nyc_output
+.vscode
+.aws
+.aws-sam
+dist
+coverage
+layers/nodejs

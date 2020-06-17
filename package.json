@@ -1,0 +1,45 @@
+{
+    "name": "backend",
+    "description": "",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "aws-xray-sdk": "^3.0.1",
+        "tslib": "^2.0.0"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.2.11",
+        "@types/chai-as-promised": "^7.1.2",
+        "@types/mocha": "^7.0.2",
+        "@types/node": "^12.11.1",
+        "@types/sinon": "^9.0.4",
+        "@types/sinon-test": "^2.4.1",
+        "aws-sdk": "^2.689.0",
+        "chai": "^3.5.0",
+        "chai-as-promised": "^7.1.1",
+        "mocha": "^7.2.0",
+        "nyc": "^14.1.1",
+        "sinon": "^4.1.2",
+        "sinon-test": "^3.0.0",
+        "ts-node": "^8.10.2",
+        "typescript": "~3.8.3"
+    },
+    "nyc": {
+        "include": [
+            "src"
+        ]
+    },
+    "directories": {
+        "test": "test",
+        "coverage": "coverage"
+    },
+    "scripts": {
+        "start": "npm i && tsc -w",
+        "test": "mocha -r ts-node/register src/**/*.spec.ts",
+        "coverage": "tsc && nyc --reporter=html mocha --reporter min",
+        "build": "tsc && npm run prepareLayer",
+        "prepareLayer": "mkdir -p layers/nodejs && rm -rf node_modules layers/nodejs/node_modules && npm install --production && mv node_modules layers/nodejs/",
+        "sam": "npm run build && cp template.yml ./dist/template.yml && cp package.json ./dist/package.json && sam build && npm i"
+    },
+    "author": "Thémaco"
+}
