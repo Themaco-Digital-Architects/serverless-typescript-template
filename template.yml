@@ -3,7 +3,7 @@
 
 # The AWSTemplateFormatVersion identifies the capabilities of the template
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
 
 # Transform section specifies one or more macros that AWS CloudFormation uses to process your template
@@ -22,17 +22,25 @@ Globals:
     Timeout: 6
     Environment:
       Variables:
-        STAGE: prod
+        STAGE:
+          Ref: LambdaStage
         REGION: "eu-west-1"
     # The PermissionsBoundary allows users to safely develop with their function's permissions constrained
     # to their current application. All the functions and roles in this application have to include it and
     # it has to be manually updated when you add resources to your application.
     # More information in https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html
-    PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${AppId}-${AWS::Region}-PermissionsBoundary'
+    PermissionsBoundary:
+      Fn::Sub: "arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${AppId}-${AWS::Region}-PermissionsBoundary"
 
 Parameters:
   AppId:
     Type: String
+  LambdaStage:
+    Type: String
+    Default: Prod
+  APIStage:
+    Type: String
+    Default: v1
 
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
@@ -43,26 +51,29 @@ Resources:
   # This is a Lambda function to send email
   # TODO : replace environment variable
   # TODO : create a deadqueue letter
+  # TODO : replace a no-reply by a support address
   sendEmailFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: handlers.sendEmailHandler
       CodeUri: ./dist/
-      Description: Function able to send an email with XXX as emitter
+      Description: Function able to send an email with xxx as emitter
       Policies:
         - AWSXrayWriteOnlyAccess
         - SESCrudPolicy:
-            IdentityName: "XXX@themaco.fr"
+            IdentityName: "xxx@themaco.fr"
       Environment:
         Variables:
-          REPLY_TO_EMAIL: "XXX@themaco.fr"
-          SOURCE_EMAIL: "XXX@themaco.fr"
+          REPLY_TO_EMAIL: "xxx@themaco.fr"
+          SOURCE_EMAIL: "xxx@themaco.fr"
       Events:
         Api:
           Type: Api
           Properties:
             Path: /send-email
             Method: POST
+            Auth:
+              ApiKeyRequired: true
             RestApiId:
               Ref: ApiGatewayApi
 
@@ -78,13 +89,15 @@ Resources:
             TopicName: "*"
       Environment:
         Variables:
-          CONTACT_TOPIC: "arn:aws:sns:XXX:XXX:contact"
+          CONTACT_TOPIC: "arn:aws:sns:xxx:xxx:contact"
       Events:
         Api:
           Type: Api
           Properties:
             Path: /report
             Method: POST
+            Auth:
+              ApiKeyRequired: true
             RestApiId:
               Ref: ApiGatewayApi
 
@@ -114,25 +127,134 @@ Resources:
             RestApiId:
               Ref: ApiGatewayApi
 
-
   ApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: prod
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Fn::GetAtt:
+                - ThemacoUserPool
+                - Arn
+            AuthType: "COGNITO_USER_POOLS"
+      StageName:
+        Ref: APIStage
       Cors:
         AllowMethods: "'POST, GET, OPTIONS, DELETE'"
-        AllowHeaders: "'Accept, Content-Type, Referer, User-Agent'"
+        AllowHeaders: "'Accept, Content-Type, Referer, User-Agent, X-Api-Key'"
         AllowOrigin: "'*'"
-# ADD GatewayResponses https://github.com/awslabs/serverless-application-model/pull/841/files
+      # ADD GatewayResponses https://github.com/awslabs/serverless-application-model/pull/841/files
       Domain:
         BasePath: /
-        CertificateArn: 'arn:aws:acm:XXX:XXX:certificate/XXX'
-        DomainName: XXX
-        SecurityPolicy: TLS_1_2
-        EndpointConfiguration: REGIONAL
+        CertificateArn: "arn:aws:acm:xxx:xxx:certificate/xxx"
+        DomainName: xxx
+        EndpointConfiguration: EDGE
         Route53:
-          HostedZoneId: XXX
-        
+          HostedZoneId: xxx
+
+  BackendUsagePlanKey:
+    Type: "AWS::ApiGateway::UsagePlanKey"
+    Properties:
+      KeyId:
+        Ref: WebsiteAPIKey
+      KeyType: API_KEY
+      UsagePlanId:
+        Ref: BackendUsagePlan
+
+  WebsiteAPIKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Description: "Key used by themaco.fr website -> public"
+      Enabled: true
+      StageKeys:
+        - RestApiId:
+            Ref: ApiGatewayApi
+          StageName:
+            Ref: APIStage
+
+  BackendUsagePlan:
+    Type: "AWS::ApiGateway::UsagePlan"
+    Properties:
+      ApiStages:
+        - ApiId:
+            Ref: ApiGatewayApi
+          Stage:
+            Ref: APIStage
+      Description: Principle usage plan for website (and other public) usage of backend API
+      Quota:
+        Limit: 5000
+        Period: MONTH
+      Throttle:
+        BurstLimit: 200
+        RateLimit: 100
+
+  ThemacoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      EmailConfiguration:
+        EmailSendingAccount: DEVELOPER
+        From: "xxx@themaco.fr"
+        ReplyToEmailAddress: "xxx@themaco.fr"
+        SourceArn: "arn:aws:ses:eu-west-1:xxx:identity/xxx@themaco.fr"
+      UserPoolName: "Themaco User Pool"
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - phone
+        - email
+        - openid
+        - profile
+        - aws.cognito.signin.user.admin
+      CallbackURLs:
+        - "https://www.xxx.fr/solutions/welcome"
+      ClientName: "API Themaco Client"
+      LogoutURLs:
+        - "https://www.xxx.fr/solutions/welcome"
+      SupportedIdentityProviders:
+        - COGNITO
+        - Google
+      UserPoolId:
+        Ref: ThemacoUserPool
+
+  # The DNS record linking to Alias cloudfront has to be done manually
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      CustomDomainConfig:
+        CertificateArn: "arn:aws:acm:xxx:xxx:certificate/xxx"
+      Domain: auth.themaco.fr
+      UserPoolId:
+        Ref: ThemacoUserPool
+
+  # Sortir les clés du template
+  CognitoIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId:
+        Ref: ThemacoUserPool
+      ProviderName: "Google"
+      ProviderDetails:
+        client_id: "xxx.apps.googleusercontent.com"
+        client_secret: "xxx"
+        authorize_scopes: "profile email openid"
+      ProviderType: "Google"
+      AttributeMapping:
+        email: "email"
 
   NodeModuleLayer:
     Type: AWS::Serverless::LayerVersion
@@ -141,4 +263,4 @@ Resources:
       CompatibleRuntimes:
         - nodejs12.x
       Description: "Layer dedicated to host node_module of backend application"
-        
+#Add outputs

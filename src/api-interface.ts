@@ -9,9 +9,14 @@ export interface SendEmailEvent {
 export interface ReportEvent {
     subject: string;
     body: string;
-    topic?: TOPIC_ID; // SNS Topic Arn
+    topic?: TopicId; // SNS Topic Arn
 };
 
-export enum TOPIC_ID {
+export enum TopicId {
     CONTACT = 'CONTACT'
+}
+
+export enum ReturnCode {
+    SUCCESS = 'Success',
+    MISSING_ARGUMENTS = 'Missing arguments'
 }

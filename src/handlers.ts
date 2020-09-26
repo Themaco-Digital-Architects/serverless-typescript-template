@@ -1,6 +1,6 @@
 import { sendEmail } from './send-email/send-email';
 import { report } from './report/report';
-import { SendEmailEvent, ReportEvent } from './api-interface';
+import { SendEmailEvent, ReportEvent, ReturnCode } from './api-interface';
 
 
 export async function sendEmailHandler(event: SendEmailEvent) {
@@ -12,7 +12,6 @@ export async function reportHandler(event: ReportEvent) {
 };
 
 // TODO : en l'état quoi qui se passe la fonction lambda succeed, à gérer
-// TODO : cover cette fonction
 async function catcher(functionToCatch: Function, event: any) {
     console.log(JSON.stringify(event));
     let body;
@@ -28,13 +27,20 @@ async function catcher(functionToCatch: Function, event: any) {
         const response = await functionToCatch(body);
         return {
             statusCode: 200,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify(response),
+            headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+            body: response,
             isBase64Encoded: false
         };
     } catch (err) {
-        //TODO : distinguer erreur 400 et erreur 500
         console.log(JSON.stringify(err));
+        if (err.message.startsWith(ReturnCode.MISSING_ARGUMENTS)) {
+            return {
+                statusCode: 400,
+                headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
+                body: err.message,
+                isBase64Encoded: false
+            };
+        }
         return {
             statusCode: 500,
             headers: { "Access-Control-Allow-Origin": "*" },

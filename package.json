@@ -4,17 +4,17 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "aws-xray-sdk": "^3.0.1",
-        "tslib": "^2.0.0"
+        "aws-xray-sdk": "^3.2.0",
+        "tslib": "^2.0.1"
     },
     "devDependencies": {
-        "@types/chai": "^4.2.11",
-        "@types/chai-as-promised": "^7.1.2",
+        "@types/chai": "^4.2.12",
+        "@types/chai-as-promised": "^7.1.3",
         "@types/mocha": "^7.0.2",
-        "@types/node": "^12.11.1",
-        "@types/sinon": "^9.0.4",
+        "@types/node": "^12.12.62",
+        "@types/sinon": "^9.0.5",
         "@types/sinon-test": "^2.4.1",
-        "aws-sdk": "^2.689.0",
+        "aws-sdk": "^2.756.0",
         "chai": "^3.5.0",
         "chai-as-promised": "^7.1.1",
         "mocha": "^7.2.0",
@@ -22,11 +22,14 @@
         "sinon": "^4.1.2",
         "sinon-test": "^3.0.0",
         "ts-node": "^8.10.2",
-        "typescript": "~3.8.3"
+        "typescript": "^3.9"
     },
     "nyc": {
         "include": [
             "src"
+        ],
+        "extension": [
+            ".ts"
         ]
     },
     "directories": {
@@ -34,9 +37,9 @@
         "coverage": "coverage"
     },
     "scripts": {
-        "start": "npm i && tsc -w",
-        "test": "mocha -r ts-node/register src/**/*.spec.ts",
-        "coverage": "tsc && nyc --reporter=html mocha --reporter min",
+        "serve": "npm i && tsc -w",
+        "test": "mocha -r ts-node/register test.ts",
+        "coverage": "nyc --check-coverage --per-file --branches=100 --functions=100 --lines=100 --reporter=html --reporter=text mocha --require ts-node/register --reporter=min ./test.ts",
         "build": "tsc && npm run prepareLayer",
         "prepareLayer": "mkdir -p layers/nodejs && rm -rf node_modules layers/nodejs/node_modules && npm install --production && mv node_modules layers/nodejs/",
         "sam": "npm run build && cp template.yml ./dist/template.yml && cp package.json ./dist/package.json && sam build && npm i"

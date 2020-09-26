@@ -1,10 +1,10 @@
-import { SendEmailEvent } from '../api-interface';
+import { ReturnCode, SendEmailEvent } from '../api-interface';
 const AWSXRay = require('aws-xray-sdk-core');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-export const ses = new AWS.SES({ region: process.env.REGION });
+import * as AWS from 'aws-sdk';
+export const ses = AWSXRay.captureAWSClient(new AWS.SES({ region: process.env.REGION }));
 const EMAILS = {
-    source: process.env.SOURCE_EMAIL,
-    reply_to: process.env.REPLY_TO_EMAIL
+    source: process.env.SOURCE_EMAIL as string,
+    reply_to: process.env.REPLY_TO_EMAIL as string
 }
 
 /**
@@ -16,39 +16,26 @@ const EMAILS = {
  */
 export async function sendEmail({ subject, body, emails }: SendEmailEvent): Promise<any> {
     if (!subject || !body || emails.length === 0) {
-        throw new Error(`Missing argument: ${subject} , ${body} , ${emails}`);
+        throw new Error(`${ReturnCode.MISSING_ARGUMENTS}:{ subject:${subject}, body:${body}, emails:${emails}}`);
     }
-    const emailParams = buildEmailInfo(subject, body);
-    const params = {
+    const params: AWS.SES.SendEmailRequest = {
         Destination: {
             ToAddresses: emails
         },
         Message: {
             Body: {
-                // Html: {
-                //     Data: emailParams.emailBody.html
-                // },
                 Text: {
-                    Data: emailParams.emailBody.txt
+                    Data: body
                 }
             },
             Subject: {
-                Data: emailParams.subject
+                Data: subject
             }
         },
-        Source: emailParams.emailSource,
-        ReplyToAddresses: emailParams.ReplyToAddresses
+        Source: EMAILS.source,
+        ReplyToAddresses: [EMAILS.reply_to]
     };
     console.log(params);
-    return await ses.sendEmail(params).promise();
+    await ses.sendEmail(params).promise();
+    return ReturnCode.SUCCESS;
 };
-
-function buildEmailInfo(subject: string, body: string) {
-    return {
-        'emailBody': { txt: body },
-        'subject': subject,
-        'emailSource': EMAILS.source,
-        'ReplyToAddresses': [EMAILS.reply_to]
-    };
-
-}
