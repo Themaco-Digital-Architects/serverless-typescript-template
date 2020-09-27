@@ -16,22 +16,23 @@ function event(): ReportEvent {
 }
 
 describe('#report', function () {
-    const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
     it('should succeed and call SNS publish', sinonTest(async function () {
+        const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         chai.expect(await report(event())).to.be.equal(ReturnCode.SUCCESS);
         chai.expect(stubSns.calledOnce).to.be.true;
     }))
     it('should succeed and call SNS publish even if topic isn t specified', sinonTest(async function () {
+        const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const fakeEvent = event();
         delete fakeEvent.topic
         chai.expect(await report(fakeEvent)).to.be.equal(ReturnCode.SUCCESS);
-        chai.expect(stubSns.calledTwice).to.be.true;
+        chai.expect(stubSns.calledOnce).to.be.true;
     }))
     it('should not tolerate the lack of body', sinonTest(async function () {
+        const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const fakeEvent = event();
         delete fakeEvent.body
-        chai.expect(report(fakeEvent)).to.be.rejectedWith(ReturnCode.MISSING_ARGUMENTS);
-        // TODO : sinonTest ne semble pas encapsuler chaque test, impossible de restub sns
-        chai.expect(stubSns.calledTwice).to.be.true;
+        chai.expect(await report(fakeEvent)).to.be.rejectedWith(ReturnCode.MISSING_ARGUMENTS);
+        chai.expect(stubSns.calledOnce).to.be.true;
     }))
 });

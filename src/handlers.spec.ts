@@ -40,17 +40,17 @@ const internalErrorResponse = {
 }
 
 
-describe.only('#handlers', () => {
+describe('#handlers', () => {
     it('should succeed and call SES sendEmail', sinonTest(async function () {
-        const stubSes = sinon.stub(ses, 'sendEmail').returns({ promise: () => Promise.resolve() });
+        sinon.stub(ses, 'sendEmail').returns({ promise: () => Promise.resolve() });
         expect(await sendEmailHandler(sendEmailEvent)).deep.equals(successResponse);
     }))
     it('should call the report Handler with success', sinonTest(async function () {
-        // const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+        sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         expect(await reportHandler(reportEvent)).deep.equals(successResponse);
     }))
     it('should get a 400 error', sinonTest(async function () {
-        // const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+        sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const truncEvent = { ...reportEvent };
         delete truncEvent.subject
         const adaptResponse = { ...missingArgsResponse };
@@ -58,7 +58,7 @@ describe.only('#handlers', () => {
         expect(await reportHandler(truncEvent)).deep.equals(adaptResponse);
     }))
     it.skip('should get a 500 error', sinonTest(async function () {
-        // const stubSns = sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+        //sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const throwErrorEvent = { ...reportEvent };
         //@ts-ignore
         throwErrorEvent.topic = function () { throw new Error('blop') };
