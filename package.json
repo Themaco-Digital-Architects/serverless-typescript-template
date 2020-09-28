@@ -38,8 +38,8 @@
     },
     "scripts": {
         "serve": "npm i && tsc -w",
-        "test": "mocha -r ts-node/register test.ts",
-        "coverage": "nyc --check-coverage --per-file --branches=100 --functions=100 --lines=100 --reporter=html --reporter=text mocha --require ts-node/register --reporter=min ./test.ts",
+        "test": "mocha -r ts-node/register ./src/**/*.spec.ts ./src/*.spec.ts",
+        "coverage": "nyc --check-coverage --per-file --branches=100 --functions=100 --lines=100 --reporter=html --reporter=text mocha --require ts-node/register --reporter=min  ./src/**/*.spec.ts ./src/*.spec.ts",
         "build": "tsc && npm run prepareLayer",
         "prepareLayer": "mkdir -p layers/nodejs && rm -rf node_modules layers/nodejs/node_modules && npm install --production && mv node_modules layers/nodejs/",
         "sam": "npm run build && cp template.yml ./dist/template.yml && cp package.json ./dist/package.json && sam build && npm i"

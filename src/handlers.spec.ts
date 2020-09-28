@@ -1,12 +1,13 @@
-
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const sinonTest = require('sinon-test')(sinon);
+import SinonTest = require('sinon-test');
+const sinonTest = SinonTest(sinon);
 import 'mocha';
 chai.use(require('chai-as-promised'));
+import { expect } from 'chai';
+
 import { sendEmailHandler, reportHandler } from './handlers';
 import { ReportEvent, ReturnCode, SendEmailEvent, TopicId } from './api-interface';
-import { expect } from 'chai';
 import { ses } from './send-email/send-email';
 import { sns } from './report/report';
 
@@ -33,38 +34,51 @@ const missingArgsResponse = {
 const internalErrorResponse = {
     statusCode: 500,
     headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
+        'Access-Control-Allow-Origin': '*'
     },
+    body: 'newError',
     isBase64Encoded: false
 }
 
 
 describe('#handlers', () => {
-    it('should succeed and call SES sendEmail', sinonTest(async function () {
-        sinon.stub(ses, 'sendEmail').returns({ promise: () => Promise.resolve() });
+    it('should succeed and call SES sendEmail', sinonTest(async function (this: sinon.SinonStatic) {
+        this.stub(ses, 'sendEmail').returns({ promise: () => Promise.resolve() });
         expect(await sendEmailHandler(sendEmailEvent)).deep.equals(successResponse);
     }))
-    it('should call the report Handler with success', sinonTest(async function () {
-        sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+    it('should call the report Handler with success', sinonTest(async function (this: sinon.SinonStatic) {
+        this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         expect(await reportHandler(reportEvent)).deep.equals(successResponse);
     }))
-    it('should get a 400 error', sinonTest(async function () {
-        sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+    it.skip('should get a 500 error due to invalid calling header', sinonTest(async function (this: sinon.SinonStatic) {
+        this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+        //expect(await reportHandler(reportEventHTTP)).deep.equals(internalErrorResponse);
+    }))
+    it('should get a 400 error', sinonTest(async function (this: sinon.SinonStatic) {
+        this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const truncEvent = { ...reportEvent };
         delete truncEvent.subject
         const adaptResponse = { ...missingArgsResponse };
         adaptResponse.body = `${adaptResponse.body}: {subject:undefined , body:Je ris de me voir si belle en ce miroir}`
         expect(await reportHandler(truncEvent)).deep.equals(adaptResponse);
     }))
-    it.skip('should get a 500 error', sinonTest(async function () {
-        //sinon.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
-        const throwErrorEvent = { ...reportEvent };
-        //@ts-ignore
-        throwErrorEvent.topic = function () { throw new Error('blop') };
-        expect(await reportHandler(throwErrorEvent)).deep.equals(internalErrorResponse);
+    it('should get a 500 error', sinonTest(async function (this: sinon.SinonStatic) {
+        this.stub(sns, 'publish').returns({ promise: () => Promise.reject(internalErrorResponse.body) });
+        expect(await reportHandler(reportEvent)).deep.equals(internalErrorResponse);
     }))
 });
+
+const reportEventHTTP = {
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: {
+        subject: "La castafiore",
+        body: "Je ris de me voir si belle en ce miroir",
+        topic: TopicId.CONTACT
+    }
+};
+
 
 const reportEvent: ReportEvent = {
     subject: "La castafiore",
@@ -76,7 +90,7 @@ const sendEmailEvent: SendEmailEvent = {
     subject: "La castafiore",
     body: "Je ris de me voir si belle en ce miroir",
     emails: [
-        "jean.guerin@themaco.fr",
-        "contact@themaco.fr"
+        "tintin@themaco.fr",
+        "milou@themaco.fr"
     ]
 }

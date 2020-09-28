@@ -11,14 +11,15 @@ export async function reportHandler(event: ReportEvent) {
     return await catcher(report, event);
 };
 
-// TODO : en l'état quoi qui se passe la fonction lambda succeed, à gérer
+// TODO : en l'état quoi qu'il se passe la fonction lambda succeed, à gérer
 async function catcher(functionToCatch: Function, event: any) {
+    // Typer le body on fonction de la présent de event.header
     console.log(JSON.stringify(event));
     let body;
     try {
         if (event.headers) {
             body = JSON.parse(event.body);
-            if (event.headers['Content-Type'] !== 'application/json' && event.headers['content-type'] !== 'application/json') {
+            if (event.headers['Content-Type'] !== 'application/json') {
                 throw new Error(`invalid Content-Type ${JSON.stringify(event.headers)}`);
             };
         } else {
@@ -33,7 +34,7 @@ async function catcher(functionToCatch: Function, event: any) {
         };
     } catch (err) {
         console.log(JSON.stringify(err));
-        if (err.message.startsWith(ReturnCode.MISSING_ARGUMENTS)) {
+        if (err.message?.startsWith(ReturnCode.MISSING_ARGUMENTS)) {
             return {
                 statusCode: 400,
                 headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" },
@@ -44,7 +45,7 @@ async function catcher(functionToCatch: Function, event: any) {
         return {
             statusCode: 500,
             headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify(err.message),
+            body: err.message ? JSON.stringify(err.message) : err,
             isBase64Encoded: false
         };
     }
