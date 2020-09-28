@@ -6,7 +6,7 @@ import 'mocha';
 chai.use(require('chai-as-promised'));
 import { expect } from 'chai';
 
-import { sendEmailHandler, reportHandler } from './handlers';
+import { sendEmailHandler, reportHandler, ContentType } from './handlers';
 import { ReportEvent, ReturnCode, SendEmailEvent, TopicId } from './api-interface';
 import { ses } from './send-email/send-email';
 import { sns } from './report/report';
@@ -40,6 +40,16 @@ const internalErrorResponse = {
     isBase64Encoded: false
 }
 
+const wrongContentTypeResponse = {
+    statusCode: 500,
+    headers: {
+        'Access-Control-Allow-Origin': '*'
+    },
+    body: "\"invalid Content-Type [object Object]\"",
+    isBase64Encoded: false
+}
+
+
 
 describe('#handlers', () => {
     it('should succeed and call SES sendEmail', sinonTest(async function (this: sinon.SinonStatic) {
@@ -50,12 +60,17 @@ describe('#handlers', () => {
         this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         expect(await reportHandler(reportEvent)).deep.equals(successResponse);
     }))
-    it.skip('should get a 500 error due to invalid calling header', sinonTest(async function (this: sinon.SinonStatic) {
+    it('should call the report with an httpEvent with success', sinonTest(async function (this: sinon.SinonStatic) {
         this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
-        //expect(await reportHandler(reportEventHTTP)).deep.equals(internalErrorResponse);
+        expect(await reportHandler(reportEventHTTP)).deep.equals(successResponse);
+    }))
+    it('should get a 500 error due to invalid calling header', sinonTest(async function (this: sinon.SinonStatic) {
+        const httpEventWError = { ...reportEventHTTP };
+        // @ts-ignore
+        httpEventWError.headers["Content-Type"] = 'blob';
+        expect(await reportHandler(httpEventWError)).deep.equals(wrongContentTypeResponse);
     }))
     it('should get a 400 error', sinonTest(async function (this: sinon.SinonStatic) {
-        this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
         const truncEvent = { ...reportEvent };
         delete truncEvent.subject
         const adaptResponse = { ...missingArgsResponse };
@@ -70,13 +85,15 @@ describe('#handlers', () => {
 
 const reportEventHTTP = {
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': ContentType.JSON,
+        'Access-Control-Allow-Origin': '*'
     },
     body: {
         subject: "La castafiore",
         body: "Je ris de me voir si belle en ce miroir",
         topic: TopicId.CONTACT
-    }
+    },
+    isBase64Encoded: false
 };
 
 

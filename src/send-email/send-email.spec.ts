@@ -27,7 +27,7 @@ describe('#send-email', () => {
         expect(result).to.be.equal(ReturnCode.SUCCESS);
     }))
     it('should not tolerate the lack of body', sinonTest(async function (this: sinon.SinonStatic) {
-        const stubSes = this.stub(ses, 'sendEmail').returns({ promise: () => Promise.resolve() });
+        const stubSes = this.stub(ses, 'sendEmail');
         const fakeEvent = { ...event };
         delete fakeEvent.body
         expect(sendEmail(fakeEvent)).to.be.rejectedWith(ReturnCode.MISSING_ARGUMENTS);

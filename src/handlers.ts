@@ -2,25 +2,29 @@ import { sendEmail } from './send-email/send-email';
 import { report } from './report/report';
 import { SendEmailEvent, ReportEvent, ReturnCode } from './api-interface';
 
+type HttpEvent = { body: object, headers: { 'Content-Type': ContentType, 'Access-Control-Allow-Origin': string }, isBase64Encoded: boolean }
+type FunctionsEvent = SendEmailEvent | ReportEvent
+export enum ContentType {
+    JSON = 'application/json'
+}
 
-export async function sendEmailHandler(event: SendEmailEvent) {
+export async function sendEmailHandler(event: SendEmailEvent | HttpEvent) {
     return await catcher(sendEmail, event);
 };
 
-export async function reportHandler(event: ReportEvent) {
+export async function reportHandler(event: ReportEvent | HttpEvent) {
     return await catcher(report, event);
 };
 
 // TODO : en l'état quoi qu'il se passe la fonction lambda succeed, à gérer
-async function catcher(functionToCatch: Function, event: any) {
-    // Typer le body on fonction de la présent de event.header
+async function catcher(functionToCatch: Function, event: FunctionsEvent | HttpEvent) {
     console.log(JSON.stringify(event));
     let body;
     try {
-        if (event.headers) {
-            body = JSON.parse(event.body);
-            if (event.headers['Content-Type'] !== 'application/json') {
-                throw new Error(`invalid Content-Type ${JSON.stringify(event.headers)}`);
+        if (isHttpEvent(event)) {
+            body = JSON.parse(JSON.stringify(event.body));
+            if (event.headers['Content-Type'] !== ContentType.JSON) {
+                throw new Error(`invalid Content-Type ${event.headers}`);
             };
         } else {
             body = event;
@@ -49,5 +53,8 @@ async function catcher(functionToCatch: Function, event: any) {
             isBase64Encoded: false
         };
     }
+}
 
+function isHttpEvent(event: any): event is HttpEvent {
+    return !!(event as HttpEvent).headers
 }

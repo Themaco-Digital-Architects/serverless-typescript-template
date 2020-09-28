@@ -31,7 +31,7 @@ describe('#report', function () {
         expect(stubSns.calledOnce).to.be.true;
     }))
     it('should not tolerate the lack of body', sinonTest(async function (this: sinon.SinonStatic) {
-        const stubSns = this.stub(sns, 'publish').returns({ promise: () => Promise.resolve() });
+        const stubSns = this.stub(sns, 'publish');
         const fakeEvent = event();
         delete fakeEvent.body
         await expect(report(fakeEvent)).to.be.rejectedWith(ReturnCode.MISSING_ARGUMENTS);
