@@ -25,7 +25,7 @@ This template is a starter project. It is designed to be a base for new projects
 ## Tests
 ### Test framework
 We use [MochaJs](https://mochajs.org/) as test framework
-We believe that maintaining a 100% coverage is a good practice to ensure code reliability. That why this rule is hard code in `npm run test`. You must remove it from there if it is inconvient for your work. NOT IMPLEMENTED YET.
+We believe that maintaining a 100% coverage is a good practice to ensure code reliability. That why this rule is hard code in `npm run coverage`. You must remove it from there if it is inconvient for your work.
 
 ### SAM tests - run locally
 SAM, based on a Docker, offers the possibility to locally tests function. You need to follow [AWS CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-test-and-debug.html) set up instruction. On visual studio code, for example, a AWS toolkit also necessary (amazonwebservices.aws-toolkit-vscode). 
