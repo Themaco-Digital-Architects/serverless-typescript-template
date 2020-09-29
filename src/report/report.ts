@@ -1,28 +1,28 @@
-import { ReportEvent, TOPIC_ID } from '../api-interface';
+import { ReportEvent, ReturnCode, TopicId } from '../api-interface';
 const AWSXRay = require('aws-xray-sdk-core');
-const AWS = AWSXRay.captureAWS(require('aws-sdk'));
-export const sns = new AWS.SNS({ region: process.env.REGION });
+import * as AWS from 'aws-sdk';
+export const sns = AWSXRay.captureAWSClient(new AWS.SNS({ region: process.env.REGION }));
 
-const topics: Map<TOPIC_ID, string | undefined> = new Map();
-topics.set(TOPIC_ID.CONTACT, process.env.CONTACT_TOPIC);
+const topics: Map<TopicId, string | undefined> = new Map();
+topics.set(TopicId.CONTACT, process.env.CONTACT_TOPIC);
 
 /**
  * Send a notification with SNS service to a chosen endpoint
  * @return {Promise<{ MessageId: string }>} : return AWS promise request
  */
-export async function report({ subject, body, topic }: ReportEvent): Promise<any> {
+export async function report({ subject, body, topic }: ReportEvent): Promise<ReturnCode> {
     if (!subject || !body) {
-        // TODO : passer erreur missing argument en lib
-        throw new Error(`Missing argument: ${subject} , ${body}`);
+        throw new Error(`${ReturnCode.MISSING_ARGUMENTS}: {subject:${subject} , body:${body}}`);
     }
     if (!topic) {
-        topic = TOPIC_ID.CONTACT;
+        topic = TopicId.CONTACT;
     }
-    const params = {
+    const params: AWS.SNS.PublishInput = {
         TopicArn: topics.get(topic),
         Message: body,
         Subject: subject
     };
     console.log(params);
-    return await sns.publish(params).promise();
+    await sns.publish(params).promise();
+    return ReturnCode.SUCCESS;
 };

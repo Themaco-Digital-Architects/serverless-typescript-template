@@ -1,8 +1,8 @@
 {
-    "subject": "La Castafiore",
+    "subject": "La castafiore",
     "body": "Je ris de me voir si belle en ce miroir",
-    "emailsLists": [
-        "XXX@themaco.fr",
-        "XXX@themaco.fr"
+    "emails": [
+        "jean.guerin@themaco.fr",
+        "contact@themaco.fr"
     ]
 }
